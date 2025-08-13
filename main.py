@@ -1,131 +1,67 @@
-import torch
+import torch 
 import torch.nn as nn 
-import torch.optim as optim 
-from torch.utils.data import DataLoader
-from torchvision import transforms, datasets 
-import matplotlib.pyplot as plt
+import torch.optim as optim
+import os
+from CNN import CNN 
+from evaluate import evaluate
+from training import train_epoch
+from  DataHandler import data_handler 
+from utils import load_model, save_model
 
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
-])
+train_loader, test_loader = data_handler()
 
-train_data = datasets.MNIST(
-    root="mnist",
-    train=True,
-    transform=transform,
-    download=True,
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = CNN().to(device)
+
+LOAD_EXISTING = False
+MODEL_PATH = os.path.join("mnist","best_model.pth")
+
+if LOAD_EXISTING and os.path.exists(MODEL_PATH):
+    loaded_model, checkpoint = load_model(model_path=MODEL_PATH,device=device)
+    if load_model is not None: 
+        model = loaded_model
+        print("Loaded existing model")
+        
+criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
+
+scheduler = optim.lr_scheduler.OneCycleLR(
+    optimizer,
+    max_lr=0.01,
+    epochs=20,
+    steps_per_epoch=len(train_loader),
+    pct_start=0.3
 )
 
-test_data = datasets.MNIST(
-    root="mnist",
-    train=False,
-    transform=transform,
-    download=True,
-)
+EPOCHS = 20 
+train_losses, train_accuracies = [], [] 
+test_losses, test_accuracies = [], []
+best_test_accuracies = 0 
+patience = 5 
+patience_counter = 0 
 
-train_loader = DataLoader(train_data, batch_size=64,shuffle=True)
-test_loader = DataLoader(test_data,batch_size=64,shuffle=False)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-class NeuralNetwork(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.model = nn.Sequential(
-            #first convolutional block 
-            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Dropout(0.25),
-            
-            #second convolutional block
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Dropout(0.5),
-
-            #flatten data for the fully connected network 
-            nn.Flatten(),
-
-            #network 
-            nn.Linear(64 * 7 * 7, 128),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(128,10),
-            nn.LogSoftmax(dim=1),
-        )
-
-    def forward(self, input_data):
-        return self.model(input_data)
-
-model = NeuralNetwork().to(device)
-criterion = nn.NLLLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.01)
-
-def train(model, train_loader, criterion, optimizer, device):
-    model.train()
-    running_loss = 0.0
-
-    for image, label in train_loader:
-        image, label = image.to(device), label.to(device)
-
-        output = model.forward(image)
-        loss = criterion(output, label)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        running_loss += loss.item()
-
-    avg_loss = running_loss / len(train_loader)
-    return avg_loss
-
-def test(model, test_loader, device):
-    model.eval()
-    correct = 0.0 
-    total = 0.0 
-
-    with torch.no_grad():
-        for image, label in test_loader:
-            image, label = image.to(device), label.to(device)
-            outputs = model.forward(image)
-
-            _, prediction = torch.max(outputs.data,1)
-
-            total += label.size(0)
-            correct += (prediction == label).sum().item()
-
-    accuracy = 100 * correct / total
-    return accuracy
-
-epochs = 10 
-train_losses = []
-test_accuracies = []
-
-for epoch in range(epochs):
-    train_loss = train(model, train_loader, criterion, optimizer, device)
+for epoch in range(EPOCHS):
+    print(f"\nEpoch {epoch + 1} / {EPOCHS}")
+    
+    train_loss, train_accuracy = train_epoch(model,train_loader,criterion, optimizer, scheduler, device)
     train_losses.append(train_loss)
+    train_accuracies.append(train_accuracy)
 
-    test_accuracy = test(model, test_loader, device)
-    test_accuracies.append(test_accuracy)
+    test_loss, test_accuracy = evaluate(model, test_loader, criterion, device)
+    test_losses.append(test_loss)
+    test_accuracies.append(test_accuracies)
 
-    print(f"Epoch [{epoch + 1}/{epochs}], Loss: {train_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%") 
+    print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.2f}%")
+    print(f"Test Loss: {test_loss:.4f}, Test Acc: {test_accuracy:.2f}%")
 
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 2, 1)
-plt.plot(train_losses)
-plt.title('Training Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-
-plt.subplot(1, 2, 2)
-plt.plot(test_accuracies)
-plt.title('Test Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy (%)')
-
-plt.tight_layout()
-plt.show()
-
+    if test_accuracy > best_test_accuracies:
+        best_test_accuracies = test_accuracy
+        save_model(model, optimizer,epoch,test_accuracy,MODEL_PATH)
+        paitence_couter = 0
+        print(f"New best model saved! Test Acc: {test_accuracy:.2f}%")
+    else:
+        patience_counter += 1
+        
+    if patience_counter >= patience:
+        print(f"Early stopping triggered after {epoch + 1} epochs")
+        break
