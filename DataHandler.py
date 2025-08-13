@@ -34,7 +34,7 @@ def data_handler():
 
     test_data = datasets.MNIST(
         root="mnist",
-        train=True,
+        train=False,
         transform=test_transform,
         download=True,
     )

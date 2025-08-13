@@ -11,9 +11,10 @@ def evaluate(model, test_loader, criterion, device):
         pbar = tqdm(test_loader, desc="Evaluating")
         
         for data, target in pbar:
-            data, target = data.to(device, non_blocking=True), target.to(device, non_blocking=True),
+            data, target = data.to(device, non_blocking=True), target.to(device, non_blocking=True)
             output = model(data)
-            test_loss += criterion(target,output)
+            loss = criterion(output,target)
+            test_loss += loss.item()
             prediction = output.argmax(dim=1,keepdim=True)
             correct += prediction.eq(target.view_as(prediction)).sum().item()
             total += target.size(0)

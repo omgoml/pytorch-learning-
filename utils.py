@@ -22,7 +22,7 @@ def save_model(model, optimizer, epoch, test_accuracy, file_path):
     torch.save({
         "epoch": epoch,
         "model_state_dict": model.state_dict(),
-        "optimizer": optimizer.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
         "test_accuracy": test_accuracy,
     }, file_path)
 
