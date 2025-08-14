@@ -33,11 +33,12 @@ class TrainingModel:
         pbar = tqdm(self.train_loader, desc="Training...")
 
         for images, labels in pbar:
-            images, labels = images.to(DEVICE["type"]), labels.to(DEVICE["type"])
+            images, labels = images.to(DEVICE["type"],non_blocking=True), labels.to(DEVICE["type"],non_blocking=True)
 
             self.optimizer.zero_grad()
             output = self.model(images)
             loss = self.criterion(output, labels)
+            loss.backward()
 
             nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 

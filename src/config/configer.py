@@ -7,7 +7,7 @@ DEVICE = {
 
 ROOT_PATH = "mnist"
 MODEL_PATH = os.path.join(ROOT_PATH, "best_model.pth")
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 NUM_WORKER = 4 if DEVICE["type"] == "cuda" else 2
 
 EPOCHS = 20

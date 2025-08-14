@@ -1,5 +1,7 @@
+import torch
 import torch.nn as nn 
 import torch.optim as optim 
+import numpy as np
 from config.configer import *
 from data.DataHandler import data_handler
 from model.cnn import CNNModel
@@ -7,6 +9,11 @@ from inference.InferenceModel import InferenceModel
 from training.train import TrainingModel
 
 def main():
+    torch.manual_seed(42)
+    np.random.seed(42)
+    
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(42)
 
     IModel = InferenceModel()
     
@@ -21,6 +28,7 @@ def main():
                 max_lr=0.01,
                 epochs=EPOCHS,
                 steps_per_epoch= len(train_loader),
+                pct_start=0.3,
             )
             TrainingProgress = TrainingModel(cnn_model=model,criterion=criterion,optimizer=optimizer,scheduler=scheduler)
 

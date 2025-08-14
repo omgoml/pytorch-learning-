@@ -1,3 +1,4 @@
+import torch 
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 from config.configer import *
@@ -29,7 +30,7 @@ def data_handler():
         batch_size=BATCH_SIZE,
         shuffle=True,
         num_workers=NUM_WORKER,
-        pin_memory=True if DEVICE["type"] == "cuda" else False
+        pin_memory=True if torch.cuda.is_available() else False
     )
 
     test_loader = DataLoader(
@@ -37,7 +38,7 @@ def data_handler():
         batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKER,
-        pin_memory=True if DEVICE["type"] == "cuda" else False
+        pin_memory=True if torch.cuda.is_available() else False
     )
     
     return train_loader, test_loader

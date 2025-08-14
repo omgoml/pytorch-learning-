@@ -18,17 +18,17 @@ class CNNModel(nn.Module):
 
             #Second convolutional Block 
             nn.Conv2d(in_channels=32,out_channels=64,kernel_size=3,padding=1),
-            nn.BatchNorm2d(num_features=64),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=64,out_channels=64,kernel_size=3,padding=1),
-            nn.BatchNorm2d(num_features=64),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=dropout_rate),
             nn.MaxPool2d(kernel_size=2,stride=2),
 
             #third convolutional Block 
             nn.Conv2d(in_channels=64,out_channels=128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(num_features=128),
+            nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=dropout_rate * 0.5),
                     
@@ -64,7 +64,7 @@ class CNNModel(nn.Module):
 
     def forward(self, input_data: torch.Tensor):
         output = self.features(input_data)
-        output = output.view(output.size(0),-1) 
+        output = torch.flatten(output,1) 
         output = self.classifier(output)
         return output
 
