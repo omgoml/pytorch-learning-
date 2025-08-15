@@ -17,7 +17,7 @@ class InferenceModel:
             return "Fail"
         else:
             try:
-                loaded_model, _ = ModelLoader()
+                loaded_model, checkpoint = ModelLoader()
 
                 if loaded_model is not None:
                     self.model = loaded_model

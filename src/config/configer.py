@@ -2,7 +2,7 @@ import torch
 import os 
 
 DEVICE = {
-    "type": "cuda" if torch.cuda.is_available() else "cpu"
+    "type": torch.device("cuda" if torch.cuda.is_available() else "cpu")
 }
 
 ROOT_PATH = "mnist"
