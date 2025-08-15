@@ -39,11 +39,11 @@ class CNNModel(nn.Module):
             nn.Linear(in_features=128 * 4 * 4, out_features=512),
             nn.BatchNorm1d(num_features=512),
             nn.ReLU(inplace=True),
-            nn.Dropout1d(p=dropout_rate),
+            nn.Dropout(p=dropout_rate),
             nn.Linear(in_features=512, out_features=256),
             nn.BatchNorm1d(num_features=256),
             nn.ReLU(inplace=True),
-            nn.Dropout1d(p=dropout_rate * 0.5),
+            nn.Dropout(p=dropout_rate * 0.3),
             nn.Linear(in_features=256, out_features=10),
         )
         #initialize weight and bias 

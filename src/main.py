@@ -18,7 +18,10 @@ def main():
     IModel = InferenceModel()
     
     try:
-        if IModel.model is None:
+
+        load_result = IModel.load_trained_model() == "Fail"
+        
+        if IModel.model is None or load_result:
             train_loader, _ = data_handler()
             model = CNNModel().to(DEVICE["type"])
             criterion = nn.CrossEntropyLoss()
@@ -33,12 +36,23 @@ def main():
             TrainingProgress = TrainingModel(cnn_model=model,criterion=criterion,optimizer=optimizer,scheduler=scheduler)
 
             TrainingProgress.train()
-        else:
-            image_path = input("Enter your image path: ")
-            predict, confidence, _ = IModel.predict_from_file(image_path)
+            print("\n Loading trained model...")
 
-            print(f"Predicted digit: {predict}")
-            print(f"confidence: {confidence:.4f}")
+            IModel.load_trained_model()
+
+        else:
+            while True:
+                image_path = input("Enter your image path (or 'quit' to exit): ")
+                
+                if image_path.lower() == "quit":
+                    break 
+                try:
+                    predict, confidence, _ = IModel.predict_from_file(image_path)
+
+                    print(f"Predicted digit: {predict}")
+                    print(f"confidence: {confidence:.4f}")
+                except Exception as e:
+                    print(f"Error : {e}")
 
     except Exception as e:
         print(f"Error: {e}")

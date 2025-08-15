@@ -43,18 +43,21 @@ class TrainingModel:
             nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
             self.optimizer.step()
-            self.scheduler.step()
 
             training_loss += loss.item()
             _, prediction = torch.max(output, 1)
             correct += prediction.eq(labels.view_as(prediction)).sum().item()
             total += labels.size(0)
+            
+            current_accuracy = 100 * correct / total
 
             pbar.set_postfix({
                 "Loss": f"{loss.item():.4f}",
-                "Accuracy":f"{100 * correct / total:.2f}",
+                "Accuracy":f"{current_accuracy:.2f}",
                 "LR": f"{self.scheduler.get_last_lr()[0]:.6f}"
             })
+
+            self.scheduler.step()
 
         return training_loss / len(self.train_loader), 100 * correct/total
 
